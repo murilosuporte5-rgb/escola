@@ -1,0 +1,22 @@
+{
+  "version": "10.3",
+  "status": "production",
+  "school": {
+    "levels": ["Fácil", "Médio", "Difícil", "Impossível"],
+    "objective_questions": 170,
+    "history": {
+      "easy": 9,
+      "medium": 9,
+      "hard": 11,
+      "impossible": 12,
+      "open_hard": 6,
+      "open_impossible": 11
+    }
+  },
+  "production": {
+    "url": "https://codequest-academy-bice.vercel.app",
+    "html_bytes": 322818,
+    "sha256": "bd3baa31c2671982bbcf621a1bfb21fad0467602cbb687fa634e38e747e8ec74"
+  },
+  "chunks": ["sch1.txt", "sch2.txt", "sch3.txt", "sch4.txt", "sch5.txt", "sch6.txt"]
+}
