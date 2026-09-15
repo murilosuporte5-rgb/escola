@@ -1,0 +1,76 @@
+name: Rebuild CodeQuest v10.5
+
+on:
+  push:
+    paths:
+      - '.github/workflows/rebuild-codequest-v105.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Rebuild exact v10.5
+        shell: python
+        run: |
+          import base64, gzip, hashlib, json, re
+          from pathlib import Path
+
+          base_files = [
+              'codequest/v104/payload00.txt',
+              'codequest/v104/payload01.txt',
+              'codequest/v104/payload02.txt',
+              'codequest/v104/payload03.txt',
+              'codequest/v104/payload04.txt',
+              'codequest/v104/payload05.txt',
+              'codequest/v104-final/payload06a.txt',
+              'codequest/v104-final/payload06b.txt',
+              'codequest/v104/payload07.txt',
+          ]
+          delta_files = [
+              'codequest-v105/d0.txt',
+              'codequest-v105/d1.txt',
+              'codequest-v105/d2.txt',
+              'codequest-v105/d3.txt',
+              'codequest-v105/d4.txt',
+          ]
+
+          packed = ''.join(Path(p).read_text(encoding='utf-8') for p in base_files)
+          packed = re.sub(r'\s+', '', packed)
+          base = gzip.decompress(base64.b64decode(packed)).decode('utf-8')
+
+          ops = json.loads(''.join(Path(p).read_text(encoding='utf-8') for p in delta_files))
+          raw_lines = base.split('\n')
+          lines = [x + '\n' if i < len(raw_lines)-1 else x for i, x in enumerate(raw_lines)]
+          if lines and lines[-1] == '':
+              lines.pop()
+          for a, z, text in reversed(ops):
+              lines[a:z] = [text]
+          html = ''.join(lines)
+
+          expected = '1b65010197539364852a4052763e955410bb1ed418c49d614ad8c15e1a7f136c'
+          got = hashlib.sha256(html.encode('utf-8')).hexdigest()
+          print('bytes=', len(html.encode('utf-8')))
+          print('sha256=', got)
+          if got != expected:
+              raise SystemExit(f'INTEGRITY FAILURE: {got}')
+
+          out = Path('codequest-live/index.html')
+          out.parent.mkdir(parents=True, exist_ok=True)
+          out.write_text(html, encoding='utf-8', newline='')
+      - name: Commit exact full build
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add codequest-live/index.html
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Rebuild exact CodeQuest v10.5 full"
+            git push
+          fi
